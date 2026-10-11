@@ -1615,7 +1615,7 @@
       const trendCell = el("td", {}, state.ui.showTrend ? [sparkCanvas] : [el("span", { class: "dim", text: "–" })]);
 
       const row = el("tr", {
-        onclick: () => { location.hash = "#/chart/" + r.symbol; },
+        onclick: () => App.OpenWith.open(r.symbol),
       }, [
         el("td", { class: "dim", text: String(start + i + 1) }),
         el("td", { class: "l" }, [
@@ -3395,7 +3395,12 @@
         el("div", { class: "ck-debug", id: "debugStrip", style: "display:none" }),
         el("div", { class: "ck-toolbar" }, [
           el("div", { class: "ck-toolbar-left" }, [customize, copyBtn, csvBtn, xlsBtn]),
-          el("div", { class: "ck-toolbar-right" }, [search, resultSettings]),
+          el("div", { class: "ck-toolbar-right" }, [
+            /* Same switch the watchlist uses, on the same shared preference —
+               set it here and a starred pair follows you across the app. */
+            App.OpenWith.seg((v) => toast("Opening coins in " + App.OpenWith.NAMES[v], "", "", 2200)),
+            search, resultSettings,
+          ]),
         ]),
         ui.colEditor ? el("div", { class: "ck-col-editor" }, [columnsPanel()]) : null,
         el("div", { id: "resultsBody" }),

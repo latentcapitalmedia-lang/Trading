@@ -219,6 +219,74 @@
        site" should mean; a caller that knows better passes one. */
     return iv ? base + "&interval=" + encodeURIComponent(tvIv(iv)) : base;
   }
+
+  /* What a row click opens — this app's own chart, TradingView's framed widget
+     inside the app, or TradingView's real site in a new tab. Built here, next
+     to the URL builders it needs, then published on `App` so the screener can
+     render the same switch instead of growing a second copy of this logic.
+     Persisted, because it is a preference about the whole app rather than any
+     one page's state — and it is the switch TradingView has no room for in its
+     own watchlist, where the chart choice is made once, globally. */
+  const OPEN_NAMES = { chart: "the chart", tv: "TradingView", tvsite: "tradingview.com" };
+  const OPEN_HINTS = {
+    chart: "Click a row to open it on the chart",
+    tv: "Click a row to open it on TradingView",
+    tvsite: "Click a row to open it on tradingview.com in a new tab",
+  };
+  function openWithRead() {
+    try {
+      const v = localStorage.getItem("cx.openWith");
+      if (v && OPEN_NAMES[v]) return v;
+    } catch (e) { /* private mode */ }
+    return "chart";
+  }
+  /* Open `symbol` the way the switch is currently set. The timeframe is always
+     the one the in-app chart would have opened with, so a row click and a deep
+     link land on the same bars either way. */
+  function openSymbol(symbol) {
+    const mode = openWithRead();
+    if (mode === "tvsite") {
+      /* A real tab. tradingview.com sends `frame-ancestors 'none'`, so a new
+         tab is the only way to reach the full logged-in site — your account,
+         your saved layouts, the Pine you wrote there. window.open from a click
+         is a user gesture, so no browser blocks it. */
+      window.open(tvSiteUrl(symbol, chartState.interval), "_blank", "noopener");
+      return;
+    }
+    location.hash = (mode === "tv" ? "#/tradingview/" : "#/chart/") + symbol;
+  }
+  /* The three-way switch itself. Rebuilt from the stored value every time, so
+     two of them on screen can never disagree; `onChange(mode)` fires after the
+     write, letting a page refresh its own column hints and headers. */
+  function openSeg(onChange) {
+    const btns = {};
+    const pick = (v) => {
+      try { localStorage.setItem("cx.openWith", v); } catch (e) { /* quota */ }
+      Object.keys(btns).forEach((k) => btns[k].classList.toggle("selected", k === v));
+      if (onChange) onChange(v);
+    };
+    btns.chart = el("button", {
+      class: "segmented__item", text: "Chart",
+      title: "Rows open on this app's own chart", onclick: () => pick("chart"),
+    });
+    btns.tv = el("button", {
+      class: "segmented__item", text: "TradingView",
+      title: "Rows open on TradingView's chart, framed inside this app", onclick: () => pick("tv"),
+    });
+    btns.tvsite = el("button", {
+      class: "segmented__item", text: "Open in TradingView",
+      title: "Rows open the real tradingview.com in a new tab — signed in, with your own layouts and scripts",
+      onclick: () => pick("tvsite"),
+    });
+    const current = openWithRead();
+    Object.keys(btns).forEach((k) => btns[k].classList.toggle("selected", k === current));
+    return el("div", { class: "segmented segmented--small wl-open" }, [btns.chart, btns.tv, btns.tvsite]);
+  }
+  App.OpenWith = {
+    NAMES: OPEN_NAMES, HINTS: OPEN_HINTS,
+    get: openWithRead, open: openSymbol, seg: openSeg,
+  };
+
   function tvLast() {
     try {
       const v = JSON.parse(localStorage.getItem(TV_LAST) || "null");
@@ -475,69 +543,16 @@
     let token = 0;        // bumped when the group changes, killing stale polls
     let pollTimer = null;
 
-    /* What a row click opens: this app's own chart, TradingView's framed
-       widget inside the app, or TradingView's real site in a new tab.
-       Persisted — it is a preference about the whole app, not this page's
-       state — and it is the switch TradingView has no room for in its own
-       watchlist, where the chart choice is made once, globally. */
-    const openBtns = {};
-    const OPEN_NAMES = { chart: "the chart", tv: "TradingView", tvsite: "tradingview.com" };
-    const OPEN_HINTS = {
-      chart: "Click a row to open it on the chart",
-      tv: "Click a row to open it on TradingView",
-      tvsite: "Click a row to open it on tradingview.com in a new tab",
-    };
-    function openMode() {
-      try {
-        const v = localStorage.getItem("cx.openWith");
-        if (v && OPEN_NAMES[v]) return v;
-      } catch (e) { /* private mode */ }
-      return "chart";
-    }
-    let openWith = openMode();
-
-    function openPair(symbol) {
-      if (openWith === "tvsite") {
-        /* A real tab, deep-linked to the same symbol and timeframe the in-app
-           chart would have opened with. tradingview.com sends
-           frame-ancestors 'none', so a new tab is the only way to reach the
-           full logged-in site — your account, your saved layouts, the Pine
-           you wrote there. window.open from a click is a user gesture, so no
-           browser blocks it. */
-        window.open(tvSiteUrl(symbol, chartState.interval), "_blank", "noopener");
-        return;
-      }
-      location.hash = (openWith === "tv" ? "#/tradingview/" : "#/chart/") + symbol;
-    }
-
-    function setOpenMode(v) {
-      openWith = v;
-      try { localStorage.setItem("cx.openWith", v); } catch (e) { /* quota */ }
-      Object.keys(openBtns).forEach((k) => openBtns[k].classList.toggle("selected", k === v));
-      COL_HINT.symbol = OPEN_HINTS[v];
+    /* What a row click opens — the shared three-way switch from App.OpenWith,
+       the same control the screener puts in its results toolbar, so choosing
+       it on either page sets it for both. */
+    const openPair = (symbol) => App.OpenWith.open(symbol);
+    const openSeg = App.OpenWith.seg((v) => {
+      COL_HINT.symbol = App.OpenWith.HINTS[v];
       updateHeaders();
-      toast("Opening pairs in " + OPEN_NAMES[v], "", "", 2200);
-    }
-
-    const openSeg = el("div", { class: "segmented segmented--small wl-open" }, [
-      (openBtns.chart = el("button", {
-        class: "segmented__item" + (openWith === "chart" ? " selected" : ""),
-        text: "Chart", title: "Rows open on this app's own chart",
-        onclick: () => setOpenMode("chart"),
-      })),
-      (openBtns.tv = el("button", {
-        class: "segmented__item" + (openWith === "tv" ? " selected" : ""),
-        text: "TradingView", title: "Rows open on TradingView's chart, framed inside this app",
-        onclick: () => setOpenMode("tv"),
-      })),
-      (openBtns.tvsite = el("button", {
-        class: "segmented__item" + (openWith === "tvsite" ? " selected" : ""),
-        text: "Open in TradingView",
-        title: "Rows open the real tradingview.com in a new tab — signed in, with your own layouts and scripts",
-        onclick: () => setOpenMode("tvsite"),
-      })),
-    ]);
-    COL_HINT.symbol = OPEN_HINTS[openWith];
+      toast("Opening pairs in " + App.OpenWith.NAMES[v], "", "", 2200);
+    });
+    COL_HINT.symbol = App.OpenWith.HINTS[App.OpenWith.get()];
 
     const input = el("input", {
       type: "text", placeholder: "Star a symbol…",
