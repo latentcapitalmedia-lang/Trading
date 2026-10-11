@@ -1,0 +1,396 @@
+{
+  "updated": "2026-09-24",
+  "rule": {
+    "type": "majority",
+    "min_votes": 3,
+    "platforms": 5,
+    "note": "A coin is halal when 3 or more of the 5 platforms below mark it compliant. Grey/mashbooh and un-assessed count as NOT a vote.",
+    "auto_screen": true,
+    "auto_note": "Coins none of the five platforms has assessed are screened structurally: pegged/fiat, leveraged, tokenized equities and yield receipts are dropped, everything else passes as 'auto'. A coin the platforms HAVE assessed is never overridden."
+  },
+  "platforms": [
+    {
+      "id": "sc_my",
+      "name": "Securities Commission Malaysia — Shariah Advisory Council",
+      "short": "SC Malaysia",
+      "url": "https://www.sc.com.my/digital-assets",
+      "rank": 1,
+      "methodology": "Case-by-case SAC resolution on each asset's structure, utility and riba/gharar/maysir exposure."
+    },
+    {
+      "id": "srb",
+      "name": "Shariyah Review Bureau",
+      "short": "Shariyah Review",
+      "url": "https://shariyah.net/cryptocurrency",
+      "rank": 2,
+      "methodology": "Three-scholar panel issues case-by-case preliminary research on token utility, structure and mal/riba/gharar."
+    },
+    {
+      "id": "ifg",
+      "name": "Islamic Finance Guru",
+      "short": "IFG",
+      "url": "https://www.islamicfinanceguru.com/crypto",
+      "rank": 3,
+      "methodology": "Qualitative per-coin scholarly analysis under Mufti Faraz Adam's crypto framework — no riba, gharar or maysir."
+    },
+    {
+      "id": "cryptoummah",
+      "name": "CryptoUmmah",
+      "short": "CryptoUmmah",
+      "url": "https://cryptoummah.com/halal-crypto-list",
+      "rank": 4,
+      "methodology": "Weighted composite of 27 criteria mapped to riba > gharar > maysir, with categorical overrides; scholar-reviewed, purification % published."
+    },
+    {
+      "id": "sharlife",
+      "name": "SharLife",
+      "short": "SharLife",
+      "url": "https://sharlife.my/crypto-shariah",
+      "rank": 5,
+      "methodology": "Three-state Shariah status table (Yes / Grey / No) covering 1,183 rows; screening criteria not published."
+    }
+  ],
+  "verdicts": {
+    "BTC": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "ETH": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "SOL": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "XRP": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "ADA": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "AVAX": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "LINK": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "DOT": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "LTC": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "UNI": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "ATOM": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "XLM": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "MATIC": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "BNB": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "POL": {
+      "sc_my": "y",
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "g",
+      "sharlife": "y"
+    },
+    "TRX": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "ALGO": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "NEAR": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "BCH": {
+      "sc_my": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "XMR": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "TON": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "SUI": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "HBAR": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "ETC": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y"
+    },
+    "APT": {
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "ARB": {
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "ZEC": {
+      "ifg": "y",
+      "cryptoummah": "y",
+      "sharlife": "y"
+    },
+    "ICP": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y"
+    },
+    "FIL": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "y"
+    },
+    "WLD": {
+      "sc_my": "y",
+      "cryptoummah": "y"
+    },
+    "CRO": {
+      "ifg": "y",
+      "cryptoummah": "y"
+    },
+    "TAO": {
+      "ifg": "y",
+      "cryptoummah": "y"
+    },
+    "MNT": {
+      "ifg": "y",
+      "cryptoummah": "y"
+    },
+    "KAS": {
+      "ifg": "y",
+      "cryptoummah": "y"
+    },
+    "RENDER": {
+      "ifg": "y",
+      "cryptoummah": "y"
+    },
+    "RNDR": {
+      "ifg": "y",
+      "cryptoummah": "y"
+    },
+    "THETA": {
+      "srb": "y",
+      "ifg": "y"
+    },
+    "XTZ": {
+      "srb": "y",
+      "ifg": "y"
+    },
+    "VET": {
+      "ifg": "y"
+    },
+    "FET": {
+      "ifg": "y"
+    },
+    "EOS": {
+      "ifg": "y"
+    },
+    "IOTA": {
+      "ifg": "y"
+    },
+    "NEO": {
+      "ifg": "y"
+    },
+    "EGLD": {
+      "ifg": "y"
+    },
+    "OM": {
+      "ifg": "y"
+    },
+    "BONK": {
+      "ifg": "y"
+    },
+    "TRUMP": {
+      "ifg": "y"
+    },
+    "PAXG": {
+      "cryptoummah": "y"
+    },
+    "JUP": {
+      "cryptoummah": "y"
+    },
+    "OKB": {
+      "ifg": "y",
+      "cryptoummah": "g"
+    },
+    "BGB": {
+      "ifg": "y",
+      "cryptoummah": "g"
+    },
+    "LEO": {
+      "ifg": "y",
+      "cryptoummah": "g"
+    },
+    "QNT": {
+      "cryptoummah": "g"
+    },
+    "MANA": {
+      "srb": "g"
+    },
+    "SAND": {
+      "srb": "g"
+    },
+    "MKR": {
+      "ifg": "n"
+    },
+    "HYPE": {
+      "ifg": "n",
+      "cryptoummah": "g"
+    },
+    "ONDO": {
+      "ifg": "n",
+      "cryptoummah": "n"
+    },
+    "ENA": {
+      "ifg": "n",
+      "cryptoummah": "n"
+    },
+    "FTT": {
+      "ifg": "n"
+    },
+    "COMP": {
+      "srb": "n"
+    },
+    "AXS": {
+      "srb": "n"
+    },
+    "AAVE": {
+      "srb": "n",
+      "ifg": "n",
+      "cryptoummah": "n",
+      "sharlife": "y"
+    },
+    "SHIB": {
+      "srb": "n",
+      "ifg": "y",
+      "cryptoummah": "n",
+      "sharlife": "g"
+    },
+    "PEPE": {
+      "ifg": "y",
+      "cryptoummah": "n",
+      "sharlife": "n"
+    },
+    "DOGE": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "n",
+      "sharlife": "g"
+    },
+    "USDT": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "n"
+    },
+    "USDC": {
+      "srb": "y",
+      "ifg": "y",
+      "cryptoummah": "g"
+    },
+    "DAI": {
+      "srb": "n",
+      "ifg": "y",
+      "cryptoummah": "g"
+    },
+    "BUSD": {
+      "srb": "y"
+    },
+    "USDe": {
+      "ifg": "n",
+      "cryptoummah": "g"
+    }
+  }
+}

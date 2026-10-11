@@ -1,0 +1,9 @@
+{
+  "telegram_token": "",
+  "telegram_chat_id": "",
+  "cadence_seconds": 240,
+  "universe": 120,
+  "default_interval": "1d",
+  "browser_notifications": true,
+  "halal_only": true
+}

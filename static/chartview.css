@@ -1,0 +1,1505 @@
+/* chartview.css — TradingView-style chart chrome for the Charts page.
+   Everything is namespaced with .cv- so it never clashes with style.css. */
+
+/* The chart owns the viewport the way TradingView's does: the page itself
+   never scrolls, and when the tool rail is taller than the window it scrolls
+   inside the body instead of dragging the whole document down with it.
+   88px = 52px app topbar + 18px .view padding on each side. */
+.cv {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+  height: calc(100vh - 88px);
+  display: flex;
+  flex-direction: column;
+
+  /* TradingView's palette, scoped to the chart. The app-wide tokens
+     (--text #d8e1ec, --green #22c55e, --dim #5b6b7f) are the screener's and
+     stay as they are; inside the chart tv.com reads #dbdbdb text on #0f0f0f
+     with #089981 / #f23645 for direction and #2962ff for the accent. Every
+     legend, scale and toolbar value below resolves through these. */
+  --text: #dbdbdb;
+  --muted: #b8b8b8;
+  --dim: #878787;
+  --green: #089981;
+  --red: #f23645;
+  --accent: #2962ff;
+  --accent-2: #2962ff;
+  /* tv.com's base text colour. Without this the legend inherits body's
+     #d8e1ec, which is the screener's white, not the chart's grey. */
+  color: var(--text);
+}
+@media (max-width: 1080px) {
+  /* style.css drops .view to 12px padding below this width. */
+  .cv { height: calc(100vh - 76px); }
+}
+
+/* ------------------------------------------------------------- header */
+.cv-top {
+  display: flex;
+  align-items: center;
+  /* tv.com's controls sit 9px apart between groups, but its toolbar carries
+     fewer controls than this one. At 6px the row overflowed and flex-shrink
+     squeezed the only non-fixed control — Indicators — from its natural 105px
+     down to 78px, which shifted every control after it left of where tv.com
+     puts them. 4px keeps the whole row inside the viewport at natural sizes. */
+  gap: 4px;
+  /* tv.com's toolbar is exactly 38px end to end, with the controls filling the
+     row rather than sitting in padding. */
+  height: 38px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  /* One row always — the tool buttons squeeze rather than pushing the bar
+     count onto a second line the way `wrap` did. */
+  flex-wrap: nowrap;
+}
+.cv-top > .spacer { flex: 1 1 auto; }
+.cv-top .cv-status { white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1180px) { .cv-top .cv-status { display: none; } }
+.cv-top2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+  background: rgba(14, 20, 28, .55);
+}
+.cv-top .spacer { flex: 1; min-width: 6px; }
+
+.cv-id { display: flex; flex-direction: column; min-width: 92px; }
+.cv-sym {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.cv-sym .q { color: var(--dim); font-weight: 500; font-size: 12.5px; }
+.cv-name { font-size: 11px; color: var(--dim); white-space: nowrap; }
+
+.cv-quote { display: flex; flex-direction: column; min-width: 96px; }
+.cv-last { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.cv-chg { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cv-chg.pos { color: var(--green); }
+.cv-chg.neg { color: var(--red); }
+
+.cv-ohlc {
+  display: flex;
+  gap: 11px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+/* tv.com greys the O/H/L/C letters at rgb(219,219,219) — the same value as
+   the title line above, not a dimmer tier — and colours every value by the
+   bar's direction. */
+.cv-ohlc .k { color: var(--text); margin-right: 3px; }
+.cv-ohlc .v { color: var(--text); }
+.cv-ohlc .v.pos { color: var(--green); }
+.cv-ohlc .v.neg { color: var(--red); }
+.cv-ohlc .stamp { color: var(--dim); }
+
+/* TradingView paints the legend onto the chart itself, top-left, with no bar
+   of its own — so the symbol line, the OHLC strip and the indicator chips all
+   live in a transparent overlay over the canvas. */
+.cv-legendbox {
+  position: absolute;
+  left: 9px;
+  top: 7px;
+  right: 74px;
+  z-index: 4;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.cv-legendbox .cv-lg1 { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.cv-legendbox .cv-id,
+.cv-legendbox .cv-quote { flex-direction: row; align-items: baseline; gap: 8px; min-width: 0; }
+/* tv.com's legend is two rows: a 16px/400 title line (symbol · interval ·
+   venue, all one colour — rgb(219,219,219)) and a 13px/400 OHLC line whose
+   values take the bar's direction colour. Neither row is bold. */
+.cv-legendbox .cv-sym { font-size: 16px; font-weight: 400; }
+.cv-legendbox .cv-sym .q { font-size: 16px; font-weight: 400; color: var(--text); }
+.cv-legendbox .cv-name { font-size: 16px; font-weight: 400; color: var(--text); }
+.cv-legendbox .cv-last { font-size: 16px; font-weight: 400; }
+.cv-legendbox .cv-chg { font-size: 13px; font-weight: 400; }
+.cv-legendbox .cv-ohlc { gap: 9px; font-size: 13px; font-weight: 400; }
+.cv-legendbox .cv-legend { pointer-events: none; }
+.cv-legendbox .cv-chip { pointer-events: auto; }
+
+/* --------------------------------------------------------------- search */
+.cv-search { position: relative; flex: 0 1 auto; min-width: 112px; max-width: 160px; }
+.cv-search input {
+  width: 100%;
+  height: 28px;
+  /* tv.com's symbol field is `AAPL` at 14px/600 in rgb(219,219,219), sitting
+     in a 38px-tall control. */
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase;
+  padding-left: 27px;
+}
+.cv-search .mag {
+  position: absolute;
+  left: 8px; top: 50%;
+  transform: translateY(-50%);
+  width: 14px; height: 14px;
+  color: var(--dim);
+  pointer-events: none;
+}
+.cv-search .mag svg { width: 100%; height: 100%; display: block; }
+.cv-suggest {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0; right: 0;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  box-shadow: 0 18px 44px rgba(0,0,0,.6);
+  z-index: 60;
+  max-height: 320px;
+  overflow-y: auto;
+  display: none;
+}
+.cv-suggest.on { display: block; }
+.cv-sg {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-size: 12.5px;
+  border-bottom: 1px solid rgba(30,42,56,.55);
+}
+.cv-sg:last-child { border-bottom: none; }
+.cv-sg:hover, .cv-sg.on { background: rgba(59,130,246,.16); }
+.cv-sg .b { font-weight: 700; }
+.cv-sg .s { color: var(--dim); font-family: var(--mono); font-size: 11.5px; }
+.cv-sg .p { font-variant-numeric: tabular-nums; }
+.cv-sg .c { font-variant-numeric: tabular-nums; text-align: right; min-width: 58px; }
+.cv-sg .c.pos { color: var(--green); }
+.cv-sg .c.neg { color: var(--red); }
+.cv-sg .empty { grid-column: 1 / -1; color: var(--dim); padding: 12px; text-align: center; }
+
+/* ------------------------------------------------------------ controls */
+.cv-ibtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  /* tv.com sets its toolbar labels at 14px/400. The old 12.5px/600 made every
+     label small and heavy at once — the two differences you notice before you
+     can name them. */
+  font-size: 14px;
+  font-weight: 400;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.cv-ibtn:hover { background: #1c2836; border-color: #3a4c61; color: var(--text); }
+.cv-ibtn.on { background: rgba(59,130,246,.18); border-color: rgba(59,130,246,.55); color: var(--accent-2); }
+.cv-ibtn:disabled { opacity: .38; cursor: not-allowed; }
+.cv-ibtn .ic, .cv-ibtn svg { width: 16px; height: 16px; display: block; }
+.cv-ibtn.wide { padding: 0 13px; font-weight: 400; }
+.cv-ibtn.primary { background: rgba(59,130,246,.16); border-color: rgba(59,130,246,.45); color: var(--accent-2); }
+
+/* tv.com's toolbar controls are all 38x38 squares with 14px/400 labels in
+   rgb(219,219,219). Measured off the live site: `Compare symbols`,
+   `Chart type`, `Settings`, `Take a snapshot` are each exactly 38x38, and no
+   control carries a weight above 400. The app's own #b8b8b8 is a shade too
+   grey for the chart's chrome. */
+.cv-top .cv-ibtn {
+  min-width: 38px;
+  padding: 0 7px;
+  color: var(--text);
+  font-weight: 400;
+}
+.cv-top .cv-ibtn.wide { min-width: 0; padding: 0 13px; }
+.cv-top .cv-ibtn:hover { color: var(--text); }
+/* tv.com fits `1D` plus its chevron into 37px: 4px padding, 2px gap, a 10px
+   glyph. At the generic 7px/16px sizing the button measured 62px and shoved
+   every control after it 25px to the right. */
+.cv-top .cv-tfbtn { padding: 0 4px; gap: 2px; }
+.cv-top .cv-tfbtn svg { width: 10px; height: 10px; }
+
+.cv-group { display: flex; gap: 5px; align-items: center; }
+
+.cv-sep { width: 1px; height: 22px; background: var(--line-2); margin: 0 3px; flex: 0 0 auto; }
+
+/* --------------------------------------------------------------- legend */
+.cv-legend { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; min-width: 0; }
+/* tv.com's study legend is a flat scrim painted over the canvas — no pill,
+   no border, square corners (measured: bg rgba(15,15,15,.5), radius 0,
+   height 24, text 13px/400 rgb(219,219,219)). The bordered navy chip this
+   replaces was the loudest "not TradingView" tell in the legend, and its
+   gear/close buttons were permanently visible where TV hides them until the
+   legend row is hovered. */
+.cv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 4px 0 4px;
+  background: rgba(15, 15, 15, 0.5);
+  border: none;
+  border-radius: 0;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.cv-chip:hover { background: rgba(15, 15, 15, 0.85); color: var(--text); }
+.cv-chip .dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.cv-chip .lab { font-family: var(--sans); font-size: 13px; }
+.cv-chip .act {
+  width: 17px; height: 17px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  color: var(--text);
+  border: none; background: transparent; padding: 0;
+  /* tv.com's `hideInvisibleHover`: the controls are there, just not painted
+     until you point at the legend row. */
+  opacity: 0;
+  transition: opacity .1s linear;
+}
+.cv-chip:hover .act { opacity: 1; }
+.cv-chip .act:hover { background: rgba(59,130,246,.25); color: var(--text); }
+.cv-chip .act.del:hover { background: rgba(239,68,68,.28); color: #fca5a5; }
+.cv-chip .act svg { width: 11px; height: 11px; }
+.cv-legend .none { color: var(--dim); font-size: 12px; }
+
+/* ----------------------------------------------------------------- body */
+/* min-height:0 is what lets the row shrink below its content: without it the
+   rail's own height sets the body height and the document grows past the
+   viewport. The rail then scrolls inside the space it is given. */
+.cv-body {
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.cv-tools {
+  width: 44px;
+  flex: 0 0 44px;
+  background: var(--bg-2);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+  overflow-y: auto;
+  min-height: 0;
+}
+/* TradingView's rail buttons run the full 52px width of its 52px column and
+   carry no rounding; ours keeps the same full-bleed, square proportions. */
+.cv-tool {
+  position: relative;
+  width: 44px; height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  flex: 0 0 auto;
+}
+.cv-tool[hidden] { display: none !important; }
+.cv-tool:hover { background: var(--panel-2); color: var(--text); }
+.cv-tool.on { background: rgba(59,130,246,.2); border-color: rgba(59,130,246,.5); color: var(--accent-2); }
+.cv-tool.danger:hover { background: rgba(239,68,68,.18); color: #fca5a5; }
+.cv-tool svg { width: 24px; height: 24px; display: block; }
+.cv-tool[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 9px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1b2532;
+  border: 1px solid var(--line-2);
+  color: var(--text);
+  padding: 4px 9px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 70;
+  pointer-events: none;
+  box-shadow: 0 8px 22px rgba(0,0,0,.55);
+}
+.cv-tsep { width: 22px; height: 1px; background: var(--line-2); margin: 4px 0; flex: 0 0 auto; }
+.cv-tspace { flex: 1 1 auto; }
+
+/* --- TradingView-style tool groups: one button per group, a small triangle
+       in the corner opening a flyout of the group's other tools. --- */
+.cv-tool.cv-grp .ico { line-height: 0; }
+.cv-tool.cv-grp .ico svg { width: 24px; height: 24px; display: block; }
+.cv-tchev {
+  position: absolute;
+  right: 1px;
+  bottom: 3px;
+  width: 9px;
+  height: 9px;
+  line-height: 0;
+  color: var(--muted);
+  opacity: .7;
+  cursor: pointer;
+}
+.cv-tool.cv-grp:hover .cv-tchev,
+.cv-tool.cv-grp.on .cv-tchev { color: var(--accent-2); opacity: 1; }
+.cv-tchev svg { width: 9px; height: 9px; display: block; }
+
+/* --- flyout / context menu --- */
+.cv-flyout {
+  position: fixed;
+  z-index: 140;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  box-shadow: 0 6px 26px rgba(0,0,0,.6);
+  padding: 4px;
+  min-width: 176px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cv-fly {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 6px 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cv-fly .i {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  line-height: 0;
+}
+.cv-fly .i svg { width: 15px; height: 15px; display: block; }
+.cv-fly:hover { background: rgba(59,130,246,.16); }
+.cv-fly.on, .cv-fly.chk { background: rgba(59,130,246,.2); }
+.cv-fly.on .i, .cv-fly.chk .i { color: var(--accent-2); }
+.cv-fly.danger { color: #fca5a5; }
+.cv-fly.danger:hover { background: rgba(239,68,68,.18); }
+.cv-ctx .cv-fly .i { color: transparent; }
+.cv-ctx .cv-fly.chk .i { color: var(--accent-2); }
+.cv-fsep { height: 1px; background: var(--line-2); margin: 4px 3px; flex: 0 0 auto; }
+.cv-fhead {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 7px 9px 3px;
+  flex: 0 0 auto;
+}
+.cv-fly .k {
+  margin-left: auto;
+  padding-left: 14px;
+  font-size: 11px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.cv-tools-menu { min-width: 210px; }
+
+/* TradingView puts a star at the end of every flyout row; it fades in on
+   hover and stays gold once the tool is pinned to the floating toolbar. */
+.cv-tools-menu .cv-fly { position: relative; padding-right: 32px; }
+.cv-fstar {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--dim);
+  opacity: 0;
+  cursor: pointer;
+}
+.cv-fly:hover .cv-fstar, .cv-fstar.on { opacity: 1; }
+.cv-fstar.on { color: #ffd54f; }
+.cv-fstar:hover { background: rgba(255,255,255,.12); color: #ffd54f; }
+.cv-fstar svg { width: 15px; height: 15px; display: block; }
+
+/* --- pinned favourites toolbar: a floating, draggable strip over the plot --- */
+.cv-favbar {
+  position: absolute;
+  top: 12px;
+  right: 72px;
+  z-index: 30;
+  display: none;
+  align-items: center;
+  gap: 1px;
+  padding: 3px;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.5);
+  cursor: grab;
+}
+.cv-favbar.drag { cursor: grabbing; }
+.cv-favbar .cv-tool { width: 34px; height: 34px; border-radius: 4px; }
+.cv-favbar .cv-tool svg { width: 22px; height: 22px; }
+.cv-favbar .cv-tool[data-tip]:hover::after {
+  left: auto;
+  right: 0;
+  top: calc(100% + 9px);
+  transform: none;
+}
+
+/* Stretches to the body's definite height, so the chart fills whatever the
+   rail and the window leave it rather than a fixed estimate. */
+.cv-main {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+}
+.cv-chart { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+/* LWC separates stacked panes with a one-cell table row. TradingView's chart
+   shows no bright rule anywhere — its canvas ruling tops out at rgb(60,60,60)
+   — so the cell matches the grid line and keeps LWC's own 1px row. The 3px
+   white version of this rule was the strongest non-TV signal on the canvas. */
+.cv-chart td[colspan="3"] { height: 1px; }
+.cv-chart tr[style*="height: 1px"] > td { height: 1px; }
+
+/* the refresh control spins while it re-fits the plot */
+.cv-refresh.cv-spin svg {
+  animation: cv-spin .75s cubic-bezier(.4, 0, .2, 1);
+  transform-origin: 50% 50%;
+}
+@keyframes cv-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.cv-overlay {
+  position: absolute;
+  left: 0; top: 0;
+  z-index: 5;
+  pointer-events: none;
+  touch-action: none;
+}
+.cv-overlay.draw { pointer-events: auto; }
+.cv-overlay.pick { cursor: crosshair; }
+.cv-overlay.grab { cursor: move; }
+
+.cv-hint {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 7px 12px;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--dim);
+  flex-wrap: wrap;
+}
+.cv-hint b { color: var(--muted); font-weight: 600; }
+.cv-hint .spacer { flex: 1; }
+.cv-hint kbd {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--muted);
+}
+
+/* ----------------------------------------------------------- colour dot */
+.cv-color {
+  width: 30px; height: 30px;
+  padding: 2px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.cv-color::-webkit-color-swatch-wrapper { padding: 0; }
+.cv-color::-webkit-color-swatch { border: none; border-radius: 3px; }
+
+/* -------------------------------------------------------------- dialog */
+.cv-modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(3,6,10,.72);
+  backdrop-filter: blur(2px);
+  z-index: 85;
+  display: grid;
+  place-items: center;
+}
+.cv-modal {
+  width: min(720px, 94vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  box-shadow: rgba(0,0,0,.4) 0 2px 4px, 0 26px 70px rgba(0,0,0,.65);
+  overflow: hidden;
+  position: relative;
+}
+.cv-modal.small { width: min(560px, 94vw); }
+.cv-mhead {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px 10px;
+  border-bottom: none;
+  font-weight: 700;
+  font-size: 15px;
+}
+.cv-mhead .spacer { flex: 1; }
+.cv-mbody { padding: 4px 16px 14px; overflow-y: auto; }
+.cv-mfoot {
+  display: flex; gap: 8px; justify-content: flex-end; align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+}
+.cv-mfoot .hint { margin-right: auto; }
+
+/* TradingView's indicator dialog: Inputs / Style / Visibility tab strip. */
+.cv-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+}
+.cv-tab {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 9px 12px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+}
+.cv-tab:hover { color: var(--text); }
+.cv-tab.on { color: var(--text); border-bottom-color: var(--accent-2); }
+.cv-sec {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--dim);
+  font-weight: 700;
+  margin: 16px 0 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--line);
+}
+.cv-sec:first-child { margin-top: 6px; }
+.cv-cb { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; cursor: pointer; }
+
+/* Visibility tab rows: checkbox · label · from · slider · to */
+.cv-vis {
+  display: grid;
+  grid-template-columns: 16px 74px 52px 1fr 52px;
+  gap: 9px;
+  align-items: center;
+  margin-bottom: 9px;
+}
+.cv-vis .cv-vlab { font-size: 12.5px; color: var(--text); }
+.cv-vis .cv-vnum {
+  width: 100%;
+  height: 26px;
+  padding: 0 4px;
+  text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.cv-vis .cv-vsl { width: 100%; accent-color: var(--accent); background: transparent; }
+.cv-vis.off { opacity: .42; }
+
+/* TradingView footer buttons: Defaults ▾ · Cancel · Ok */
+.cv-btn {
+  height: 32px;
+  padding: 0 15px;
+  background: transparent;
+  border: 1px solid rgba(242,242,242,.22);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.cv-btn:hover { background: rgba(242,242,242,.07); border-color: rgba(242,242,242,.4); }
+.cv-btn-primary { background: #ffffff; border-color: #ffffff; color: #0f0f0f; }
+.cv-btn-primary:hover { background: #e8e8e8; border-color: #e8e8e8; }
+.cv-menu {
+  position: absolute;
+  left: 16px;
+  bottom: 52px;
+  min-width: 186px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  box-shadow: rgba(0,0,0,.4) 0 2px 4px, 0 14px 34px rgba(0,0,0,.55);
+  padding: 4px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+}
+.cv-menu button {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--text);
+  cursor: pointer;
+}
+.cv-menu button:hover { background: rgba(59,130,246,.16); }
+.cv-menu button.danger { color: #fca5a5; }
+.cv-menu button.danger:hover { background: rgba(239,68,68,.18); }
+.cv-chip.off { opacity: .5; }
+
+.cv-find { width: 100%; margin-bottom: 12px; }
+.cv-group-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--dim);
+  margin: 14px 0 7px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 5px;
+}
+.cv-group-title:first-child { margin-top: 0; }
+.cv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 7px; }
+.cv-study {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 9px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text);
+  text-align: left;
+  width: 100%;
+}
+.cv-study:hover { border-color: rgba(59,130,246,.55); background: #16212e; }
+.cv-study .plus { color: var(--accent-2); font-weight: 700; }
+.cv-study .sub { color: var(--dim); font-size: 11px; margin-left: auto; }
+
+.cv-active { display: flex; flex-direction: column; gap: 6px; }
+.cv-ai {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 9px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+.cv-ai .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.cv-ai .nm { font-weight: 600; }
+.cv-ai .ps { color: var(--dim); font-family: var(--mono); font-size: 11.5px; }
+.cv-ai .spacer { flex: 1; }
+
+/* ------------------------------------------- indicator templates (saved sets) */
+.cv-tpl-body { display: flex; flex-direction: column; gap: 10px; padding-top: 6px; }
+.cv-tpl-current { font-size: 12px; color: var(--dim); }
+.cv-tpl-save { display: flex; gap: 8px; }
+.cv-tpl-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.cv-tpl-name:focus { outline: none; border-color: rgba(59,130,246,.6); }
+.cv-tpl-list { display: flex; flex-direction: column; gap: 6px; }
+.cv-tpl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 13px;
+}
+.cv-tpl:hover { border-color: #3a4c61; }
+.cv-tpl .nm { font-weight: 600; }
+.cv-tpl .sub { color: var(--dim); font-size: 11.5px; }
+.cv-tpl .spacer { flex: 1; }
+.cv-tpl .cv-btn { padding: 5px 14px; height: 28px; }
+.cv-ibtn.wide span { font-size: 14px; }
+
+/* ------------------------------------------------------------ bar replay */
+.cv-replay {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: none;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.55);
+}
+.cv-replay .cv-rlab {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  color: #2962ff;
+  padding: 0 8px 0 5px;
+  user-select: none;
+}
+.cv-rbtn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+.cv-rbtn:hover { background: #1c2836; color: var(--text); }
+.cv-rbtn svg { width: 16px; height: 16px; display: block; }
+.cv-rbtn.primary {
+  width: 34px;
+  height: 30px;
+  background: #2962ff;
+  border-color: #2962ff;
+  border-radius: 5px;
+  color: #fff;
+}
+.cv-rbtn.primary:hover { background: #1e53e5; border-color: #1e53e5; }
+.cv-rbtn.exit { color: var(--dim); }
+.cv-rbtn.exit:hover { color: #f87171; }
+.cv-rbtn.speed {
+  width: auto;
+  min-width: 36px;
+  padding: 0 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--text);
+}
+.cv-rread {
+  font-size: 11.5px;
+  color: var(--dim);
+  font-family: var(--mono);
+  padding: 0 9px;
+  min-width: 78px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Replay start picker — TradingView's Bar Replay lets you choose the bar
+   before it hides any. The scrubber is that choice made draggable. */
+.cv-rscrub {
+  -webkit-appearance: none; appearance: none;
+  width: 190px; height: 20px; margin: 0;
+  background: transparent; border: 0; cursor: pointer;
+}
+.cv-rscrub::-webkit-slider-runnable-track {
+  height: 3px; border-radius: 2px;
+  background: #2a3243;
+}
+.cv-rscrub::-moz-range-track {
+  height: 3px; border-radius: 2px;
+  background: #2a3243;
+}
+.cv-rscrub::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 13px; height: 13px; margin-top: -5px;
+  border-radius: 50%;
+  background: #2962ff;
+  border: 2px solid #0f1319;
+  cursor: grab;
+}
+.cv-rscrub::-moz-range-thumb {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: #2962ff;
+  border: 2px solid #0f1319;
+  cursor: grab;
+}
+.cv-rscrub:active::-webkit-slider-thumb { cursor: grabbing; }
+
+.cv-rjump {
+  height: 24px; width: 172px; margin: 0;
+  padding: 0 7px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text);
+  background: #0f1319;
+  border: 1px solid #2a3243;
+  border-radius: 3px;
+  color-scheme: dark;           /* keeps the native calendar popup on-theme */
+}
+.cv-rjump:hover { border-color: #3c4658; }
+.cv-rjump:focus { outline: none; border-color: #2962ff; }
+
+.cv-rhint {
+  font-size: 11.5px;
+  color: #2962ff;
+  white-space: nowrap;
+  padding-right: 2px;
+}
+
+.cv-field { margin-bottom: 12px; }
+.cv-field .lab {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12.5px; font-weight: 400; letter-spacing: 0;
+  color: var(--text); margin-bottom: 5px;
+}
+.cv-field .lab .val { font-family: var(--mono); color: var(--muted); }
+.cv-field input[type=number], .cv-field select { width: 100%; }
+.cv-field input[type=range] { width: 100%; accent-color: var(--accent); background: transparent; }
+.cv-swatches { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.cv-sw {
+  width: 20px; height: 20px; border-radius: 5px;
+  border: 1px solid rgba(255,255,255,.18);
+  cursor: pointer; padding: 0;
+}
+.cv-sw.on { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+
+/* --------------------------------- TradingView indicator Style tab:
+   two-column rows — label cell (show/hide checkbox) then control cell
+   (colour swatch · plot style · value), then the OUTPUT/INPUT sections. */
+.cv-style { padding-top: 8px; }
+.cv-srow {
+  display: grid;
+  grid-template-columns: minmax(130px, 44%) minmax(0, 1fr);
+  gap: 0 10px;
+  align-items: center;
+  min-height: 36px;
+}
+.cv-srow.fill, .cv-srow.sec { grid-template-columns: minmax(0, 1fr); }
+.cv-srow.sec { margin-top: 14px; }
+.cv-scell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.cv-scell.lab { font-size: 12.5px; color: var(--text); }
+.cv-scell.fill { min-width: 0; }
+.cv-scell.grouped { padding-left: 14px; }
+.cv-slab { display: flex; align-items: center; gap: 8px; cursor: pointer; min-width: 0; width: 100%; }
+.cv-slab > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-scell.ctl { gap: 7px; }
+.cv-swatch {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 26px;
+  padding: 3px;
+  background: transparent;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.cv-swatch > i { display: block; width: 100%; height: 100%; border-radius: 2px; }
+.cv-swatch:hover { border-color: rgba(242,242,242,.45); }
+/* The global 7px form padding does not fit inside these fixed 26px controls,
+   so pad inline only — otherwise the option text is clipped top and bottom. */
+.cv-sps { flex: 1 1 auto; min-width: 0; width: 100%; height: 26px; font-size: 12.5px; padding: 0 7px; }
+.cv-snum { flex: 0 0 auto; width: 76px; height: 26px; font-size: 12.5px; padding: 0 6px; text-align: right; }
+.cv-srow.sec .cv-scell {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--dim);
+  font-weight: 700;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.cv-ssep { height: 1px; background: var(--line); margin: 10px 0; }
+.cv-ssep.big { margin: 14px 0 2px; }
+.cv-chip .vals {
+  /* tv.com colours a study's readout with the study's own line colour and
+     sets it in the UI font at 13px — the same size as the name beside it. */
+  color: var(--series, var(--muted));
+  font-family: var(--sans);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* TradingView's colour popover: palette, Opacity, Thickness, Line style */
+.cv-cpop {
+  position: absolute;
+  z-index: 90;
+  width: 218px;
+  background: var(--panel-2, #1f1f1f);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  box-shadow: rgba(0,0,0,.4) 0 2px 4px, 0 14px 34px rgba(0,0,0,.55);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cv-cp-pal { display: flex; flex-direction: column; gap: 4px; }
+.cv-cp-row { display: flex; gap: 4px; }
+.cv-cp-sw {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.cv-cp-sw:hover { transform: scale(1.14); }
+.cv-cp-sw.on { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+.cv-cp-sec { border-top: 1px solid var(--line); padding-top: 9px; }
+.cv-cp-t {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--dim);
+  font-weight: 700;
+  margin-bottom: 7px;
+}
+.cv-cp-op { display: flex; align-items: center; gap: 7px; }
+.cv-cp-sl { flex: 1 1 auto; min-width: 0; accent-color: var(--accent); background: transparent; }
+.cv-cp-num { flex: 0 0 auto; width: 54px; height: 24px; padding: 0 5px; text-align: right; font-size: 12px; }
+.cv-cp-pct { color: var(--muted); font-size: 12px; }
+.cv-cp-th, .cv-cp-ls { display: flex; gap: 6px; }
+.cv-cp-thi, .cv-cp-lsi {
+  flex: 1 1 0;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cv-cp-thi > i {
+  display: block;
+  width: 24px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: var(--text);
+}
+.cv-cp-thi.on, .cv-cp-lsi.on { background: #f2f2f2; border-color: #575757; }
+.cv-cp-thi.on > i { border-top-color: #0f0f0f; }
+.cv-cp-seg { width: 30px; height: 1px; --seg: var(--text); background: var(--seg); }
+.cv-cp-seg.s2 { background: repeating-linear-gradient(90deg, var(--seg) 0 5px, transparent 5px 8px); }
+.cv-cp-seg.s1 { background: repeating-linear-gradient(90deg, var(--seg) 0 2px, transparent 2px 5px); }
+.cv-cp-lsi.on .cv-cp-seg { --seg: #0f0f0f; }
+
+/* --------------------------------------------------------------- status */
+.cv-status { font-size: 11.5px; color: var(--dim); font-family: var(--mono); white-space: nowrap; }
+.cv-status.err { color: var(--fca5a5, #fca5a5); }
+
+@media (max-width: 900px) {
+  .cv-top, .cv-top2 { gap: 9px; }
+  .cv-ohlc { font-size: 11.5px; gap: 8px; }
+  .cv-tools { width: 38px; flex-basis: 38px; }
+  .cv-tool { width: 38px; }
+  .cv-tool svg, .cv-tool.cv-grp .ico svg { width: 22px; height: 22px; }
+}
+
+/* ------------------------------------------------- watchlist / recent row */
+.cv-quick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+  background: rgba(14, 20, 28, .35);
+}
+.cv-quick .cv-qlab {
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+.cv-quick .none { color: var(--dim); font-size: 11.5px; }
+.cv-qchip {
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 11px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: var(--mono);
+  cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.cv-qchip:hover { border-color: #3a4c61; color: var(--text); }
+.cv-qchip.on {
+  background: rgba(59, 130, 246, .18);
+  border-color: rgba(59, 130, 246, .55);
+  color: var(--accent-2);
+}
+
+
+/* ============================ TradingView header / footer chrome ======== */
+/* One 34px row of icon buttons, exactly the shapes TradingView's own
+   toolbar uses: a transparent hit box, a 24px glyph, a hairline label
+   only where TV carries one (Indicators / Save / Trade / Date Range). */
+/* tv.com's toolbar row is 38px; the buttons fill it. */
+.cv-top .cv-ibtn { height: 38px; }
+.cv-tbtn {
+  min-width: 34px;
+  padding: 0 5px;
+  background: transparent;
+  border-color: transparent;
+  color: #b8b8b8;
+  font-weight: 500;
+}
+.cv-tbtn > span { font-size: 12.5px; white-space: nowrap; }
+.cv-tbtn:hover { background: rgba(255,255,255,.08); border-color: transparent; color: #dbdbdb; }
+.cv-tbtn.on { background: rgba(59,130,246,.20); border-color: transparent; color: var(--accent-2); }
+.cv-tbtn:disabled { opacity: .30; }
+.cv-tbtn svg { width: 24px; height: 24px; }
+.cv-tfbtn { min-width: 62px; justify-content: center; gap: 5px; }
+.cv-tfbtn svg, .cv-rangebtn svg { width: 15px; height: 15px; }
+.cv-tf-lab { font-weight: 400; color: var(--text); }
+.cv-rangebtn { min-width: 108px; padding: 0 10px; gap: 7px; }
+.cv-gotobtn svg { width: 20px; height: 20px; }
+.cv-tb-save { min-width: 54px; padding: 0 12px; font-weight: 400; }
+.cv-tb-zoom { gap: 4px; }
+.cv-search { flex: 0 1 auto; }
+@media (max-width: 1180px) { .cv-search { min-width: 96px; } }
+
+/* ------------------------------------------------ popup menus ---------- */
+.cv-menu { z-index: 200; max-height: calc(100vh - 20px); overflow-y: auto; }
+.cv-menu-sep { height: 1px; background: var(--line-2); margin: 4px 6px; flex: 0 0 auto; }
+.cv-menu-head {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--dim);
+  padding: 8px 10px 4px;
+  flex: 0 0 auto;
+}
+.cv-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  flex: 0 0 auto;
+}
+.cv-menu-row .mi {
+  width: 20px; height: 20px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--muted);
+}
+.cv-menu-row .mi svg { width: 18px; height: 18px; display: block; }
+.cv-menu-row .ml { flex: 1 1 auto; text-align: left; white-space: nowrap; }
+.cv-menu-row .mh { flex: 0 0 auto; color: var(--dim); font-size: 11px; }
+.cv-menu-row .ck { flex: 0 0 auto; color: var(--accent-2); font-size: 12px; }
+.cv-menu-row.on .ml { color: var(--accent-2); font-weight: 600; }
+.cv-menu-row.on .mi { color: var(--accent-2); }
+
+/* the interval list lives in the DOM, not rebuilt per click */
+.cv-pop { padding: 6px; }
+.cv-pop .tf {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+.cv-pop .tf button { text-align: left; padding: 8px 10px; font-size: 12.5px; }
+.cv-pop .tf button.on { background: rgba(59,130,246,.20); color: var(--accent-2); }
+
+/* the interval popup is anchored to its button and stays mounted so the
+   [data-tf] buttons remain queryable while hidden */
+.cv-tfwrap { position: relative; display: inline-flex; align-items: center; }
+.cv-tfpop {
+  display: none;
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  bottom: auto;
+  min-width: 104px;
+  z-index: 210;
+}
+.cv-tfpop.on { display: flex; }
+.cv-goto-row { display: flex; gap: 6px; align-items: center; padding: 4px 8px 8px; }
+.cv-datein {
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 6px 7px;
+  font-size: 12.5px;
+  font-family: inherit;
+}
+
+/* ------------------------------------------------ bottom bar ----------- */
+.cv-fbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  height: 42px;
+  padding: 4px 8px;
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+.cv-fbar > .spacer { flex: 1 1 auto; min-width: 6px; }
+.cv-fbar .cv-ibtn { height: 30px; }
+.cv-ranges { display: flex; align-items: center; flex: 0 0 auto; }
+.cv-rtab {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.cv-rtab:hover { background: rgba(255,255,255,.07); color: var(--text); }
+.cv-rtab.on {
+  background: rgba(59,130,246,.22);
+  border-color: rgba(59,130,246,.55);
+  color: var(--accent-2);
+}
+.cv-tzbtn { min-width: 96px; font-variant-numeric: tabular-nums; font-size: 12px; padding: 0 9px; }
+.cv-adjbtn { min-width: 44px; font-size: 11.5px; font-weight: 700; letter-spacing: .5px; padding: 0 8px; }
+.cv-fbar .tf { flex: 0 0 auto; }
+
+/* ------------------------------------------------ settings dialog ------- */
+.cv-set { min-width: 340px; }
+.cv-setpane { display: block; padding-top: 2px; }
+.cv-srow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--line);
+}
+.cv-srow:last-child { border-bottom: none; }
+.cv-slab { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cv-slab .t { font-size: 13px; color: var(--text); }
+.cv-slab .h { font-size: 11.5px; color: var(--dim); }
+.cv-sfix { font-size: 13px; color: var(--muted); font-weight: 700; letter-spacing: .3px; }
+.cv-srow select { min-width: 148px; padding: 6px 8px; font-size: 12.5px; }
+.cv-srow .cv-btn { padding: 6px 14px; }
+.cv-alert { min-width: 340px; display: flex; flex-direction: column; }
+.cv-alert .hint {
+  font-size: 11.5px;
+  color: var(--dim);
+  padding: 10px 2px 2px;
+  word-break: break-word;
+  line-height: 1.5;
+}
+.cv-alert .cv-snum, .cv-alert .cv-textin { width: 100%; padding: 7px 9px; }
+
+/* ------------------------------- right-hand strip (TV's 45px icon column) */
+.cv-rstrip {
+  width: 45px;
+  flex: 0 0 45px;
+  min-height: 0;
+  background: var(--bg-2);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 0;
+  overflow: hidden;
+}
+.cv-rfill { flex: 1 1 auto; min-height: 8px; }
+.cv-rbtn {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cv-rbtn svg { width: 44px; height: 44px; display: block; }
+.cv-rbtn:hover { background: rgba(242,242,242,.07); color: var(--text); }
+.cv-rbtn.on { background: rgba(59,130,246,.18); color: var(--accent-2); }
+.cv-rdiv { width: 33px; height: 1px; border: 0; background: var(--line-2); margin: 6px 0; flex: 0 0 auto; }
+
+/* panels the strip opens */
+.cv-rpanel { min-width: 340px; max-height: 54vh; overflow-y: auto; display: flex; flex-direction: column; padding-top: 2px; }
+.cv-rp-head {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase;
+  color: var(--dim); padding: 10px 2px 6px;
+}
+.cv-rp-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 4px; border-bottom: 1px solid var(--line);
+}
+.cv-rp-row:last-child { border-bottom: none; }
+.cv-rp-sym {
+  flex: 1 1 auto; min-width: 0; text-align: left;
+  background: none; border: 0; padding: 0; margin: 0;
+  font: inherit; color: var(--text); cursor: pointer;
+}
+.cv-rp-t { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv-rp-s { font-size: 11.5px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv-rp-row.on .cv-rp-t { color: var(--accent-2); }
+.cv-rp-row.off { opacity: .55; }
+.cv-rp-x {
+  flex: 0 0 auto; width: 24px; height: 24px; padding: 0; margin: 0;
+  border: 0; border-radius: 4px; background: transparent;
+  color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer;
+}
+.cv-rp-x:hover { background: rgba(242,242,242,.08); color: var(--text); }
+.cv-rp-kv {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+  padding: 7px 4px; border-bottom: 1px solid var(--line); font-size: 12.5px;
+}
+.cv-rp-kv:last-child { border-bottom: none; }
+.cv-rp-kv .k { flex: 0 0 auto; color: var(--accent-2); font-weight: 700; font-variant-numeric: tabular-nums; }
+.cv-rp-kv .v { flex: 1 1 auto; text-align: right; color: var(--muted); }
+
+/* ------------------------------- responsive drop, the way TV itself does */
+@media (max-width: 1440px) { .cv-tb-share, .cv-tb-trade { display: none; } }
+@media (max-width: 1180px) {
+  .cv-top { gap: 4px; }
+  .cv-top .cv-sep { margin: 0 2px; }
+  .cv-tb-zoom .cv-ibtn:nth-child(-n+3) { display: none; }
+  .cv-top .cv-ibtn.wide span { display: none; }
+  .cv-top .cv-ibtn.wide { padding: 0 5px; min-width: 34px; }
+}
+@media (max-width: 1060px) { .cv-tb-datatype, .cv-tb-manage { display: none; } }
+@media (max-width: 940px)  { .cv-tb-undo, .cv-tb-redo, .cv-tb-save { display: none; } }
+@media (max-width: 860px)  { .cv-rstrip { display: none; } }
+
+/* ------------------------------------------------------- pine editor ---
+   TradingView docks the Pine Editor above the bottom toolbar: a header that
+   carries the script's file controls, the code itself with a line-number
+   gutter, and a status strip reporting the first compile error against the
+   line it came from. The interpreter underneath is `Pine` — this panel is
+   only the chrome that lets a script be written and pushed to the chart. */
+.cv-pine {
+  display: none;
+  flex: 0 0 auto;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+  background: #131722;
+  min-height: 0;
+}
+.cv-pine.on { display: flex; }
+.cv-pine-grip {
+  flex: 0 0 auto;
+  height: 6px;
+  margin-top: -3px;
+  cursor: ns-resize;
+  position: relative;
+  z-index: 3;
+}
+.cv-pine-grip:hover::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 2px;
+  height: 2px;
+  background: var(--accent-2);
+}
+
+.cv-pine-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 8px 0 10px;
+  border-bottom: 1px solid #2a2a2a;
+  background: #131722;
+}
+.cv-pine-file {
+  appearance: none;
+  background: #1c2230;
+  border: 1px solid #2a3243;
+  border-radius: 4px;
+  color: #dbdbdb;
+  font-size: 12.5px;
+  height: 26px;
+  padding: 0 8px;
+  max-width: 220px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cv-pine-file:hover { background: #232b3b; }
+.cv-pine-head .spacer { flex: 1 1 auto; min-width: 6px; }
+.cv-pine-head .cv-ibtn { height: 26px; min-width: 26px; padding: 0 7px; background: transparent; border-color: #2a3243; font-size: 12.5px; }
+.cv-pine-head .cv-ibtn:hover { background: #232b3b; border-color: #3a4c61; }
+.cv-pine-head .cv-ibtn.primary { background: #2962ff; border-color: #2962ff; color: #fff; }
+.cv-pine-head .cv-ibtn.primary:hover { background: #1e53e5; border-color: #1e53e5; }
+.cv-pine-head .cv-ibtn:disabled { opacity: .35; cursor: not-allowed; }
+
+.cv-pine-body {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+.cv-pine-gutter {
+  flex: 0 0 auto;
+  width: 46px;
+  padding: 8px 0;
+  background: #131722;
+  border-right: 1px solid #2a2a2a;
+  color: #5f6672;
+  font: 12.5px/20px var(--mono);
+  text-align: right;
+  overflow: hidden;
+  user-select: none;
+}
+.cv-pine-gutter .ln { padding-right: 10px; }
+.cv-pine-gutter .ln.err { color: #fff; background: rgba(242,54,69,.35); }
+.cv-pine-code { flex: 1 1 auto; position: relative; min-width: 0; overflow: hidden; }
+.cv-pine-hl,
+.cv-pine-ta {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 8px 12px;
+  font: 12.5px/20px var(--mono);
+  white-space: pre;
+  overflow: auto;
+  border: 0;
+  tab-size: 4;
+}
+/* The highlight layer sits under a transparent textarea. Both share the same
+   metrics so the two never drift apart; the textarea is the only thing that
+   scrolls, and the layer is scrolled to match on every input and scroll. */
+.cv-pine-hl { pointer-events: none; color: #d1d4dc; background: #0f1319; overflow: hidden; z-index: 0; }
+.cv-pine-ta {
+  background: transparent;
+  color: transparent;
+  caret-color: #dbdbdb;
+  resize: none;
+  outline: none;
+  z-index: 1;
+}
+.cv-pine-ta::selection { background: rgba(41,98,255,.32); color: transparent; }
+.cv-pine .c-cm { color: #6a737d; font-style: italic; }
+.cv-pine .c-st { color: #ce9178; }
+.cv-pine .c-nu { color: #b5cea8; }
+.cv-pine .c-kw { color: #569cd6; }
+.cv-pine .c-fn { color: #dcdcaa; }
+.cv-pine .c-ns { color: #4ec9b0; }
+.cv-pine .c-cl { color: #b5cea8; }
+
+.cv-pine-status {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-top: 1px solid #2a2a2a;
+  background: #131722;
+  color: #878787;
+  font-size: 12px;
+}
+.cv-pine-status .spacer { flex: 1 1 auto; min-width: 6px; }
+.cv-pine-pos { color: #5f6672; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cv-pine-msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-pine-msg.ok  { color: var(--green); }
+.cv-pine-msg.bad { color: #f23645; cursor: pointer; }
+.cv-pine-msg.bad:hover { text-decoration: underline; }
+
+/* Every control in the editor header is a text button — TradingView labels
+   this row rather than iconing it, and the labels carry the shortcuts. */
+.cv-pe-btn {
+  appearance: none;
+  flex: 0 0 auto;
+  height: 26px;
+  padding: 0 9px;
+  background: transparent;
+  border: 1px solid #2a3243;
+  border-radius: 4px;
+  color: #dbdbdb;
+  font: 400 12.5px/1 var(--sans);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cv-pe-btn:hover { background: #232b3b; border-color: #3a4c61; }
+.cv-pe-btn:active { background: #1a2130; }
+.cv-pe-btn.icon { padding: 0 5px; min-width: 26px; display: inline-flex; align-items: center; justify-content: center; }
+.cv-pe-btn.icon svg { width: 14px; height: 14px; }
+.cv-pe-btn.primary { background: #2962ff; border-color: #2962ff; color: #fff; font-weight: 500; padding: 0 12px; }
+.cv-pe-btn.primary:hover { background: #1e53e5; border-color: #1e53e5; }
+.cv-pe-btn:disabled { opacity: .4; cursor: not-allowed; }
+.cv-pe-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0f1319;
+  border: 1px solid #2a3243;
+  border-radius: 4px;
+  color: #dbdbdb;
+  font: 400 13px/1.4 var(--mono);
+  padding: 8px 10px;
+  outline: none;
+}
+.cv-pe-input:focus { border-color: #2962ff; }
+.cv-pe-form { display: flex; flex-direction: column; gap: 8px; min-width: 340px; }
+.cv-pe-form label { font-size: 12px; color: var(--muted); }
+.cv-pe-form .hint { font-size: 12px; color: var(--dim); }
+/* The editor steals the panel's share of the row; on narrow windows the header
+   sheds its labels before the buttons can start wrapping. */
+@media (max-width: 1180px) { .cv-pine-head .lbl { display: none; } .cv-pine-head .cv-ibtn { padding: 0 6px; } }

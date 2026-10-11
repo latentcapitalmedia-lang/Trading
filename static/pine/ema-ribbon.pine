@@ -1,0 +1,66 @@
+//@version=5
+indicator('EMA Ribbon (Stacked + Non-Repainting Buy Signal)', '', true)
+
+// --- Inputs & EMA Calculations ---
+int i_length1 = input.int(5, 'Length 1', minval=2)
+color i_c_maBull1 = input(color.green, 'Bull 1')
+color i_c_maBear1 = input(color.maroon, 'Bear 1')
+float ma1 = ta.ema(close, i_length1)
+
+int i_length2 = input.int(8, 'Length 2', minval=2)
+color i_c_maBull2 = input(color.green, 'Bull 2')
+color i_c_maBear2 = input(color.maroon, 'Bear 2')
+float ma2 = ta.ema(close, i_length2)
+
+int i_length3 = input.int(13, 'Length 3', minval=2)
+color i_c_maBull3 = input(color.green, 'Bull 3')
+color i_c_maBear3 = input(color.maroon, 'Bear 3')
+float ma3 = ta.ema(close, i_length3)
+
+int i_length4 = input.int(20, 'Length 4', minval=2)
+color i_c_maBull4 = input(color.green, 'Bull 4')
+color i_c_maBear4 = input(color.maroon, 'Bear 4')
+float ma4 = ta.ema(close, i_length4)
+
+int i_length5 = input.int(50, 'Length 5', minval=2)
+color i_c_maBull5 = input(color.green, 'Bull 5')
+color i_c_maBear5 = input(color.maroon, 'Bear 5')
+float ma5 = ta.ema(close, i_length5)
+
+int i_length6 = input.int(100, 'Length 6', minval=2)
+color i_c_maBull6 = input(color.green, 'Bull 6')
+color i_c_maBear6 = input(color.maroon, 'Bear 6')
+float ma6 = ta.ema(close, i_length6)
+
+int i_length7 = input.int(200, 'Length 7', minval=2)
+color i_c_maBull7 = input(color.green, 'Bull 7')
+color i_c_maBear7 = input(color.maroon, 'Bear 7')
+float ma7 = ta.ema(close, i_length7)
+
+// --- Alignment / Stacking Logic ---
+bool ma1_isBull = ma1 > ma2
+bool ma2_isBull = ma2 > ma3
+bool ma3_isBull = ma3 > ma4
+bool ma4_isBull = ma4 > ma5
+bool ma5_isBull = ma5 > ma6
+bool ma6_isBull = ma6 > ma7
+bool ma7_isBull = ma6 > ma7
+
+// --- Plotting EMAs ---
+plot(ma1, 'MA 1', ma1_isBull ? i_c_maBull1 : i_c_maBear1, 2)
+plot(ma2, 'MA 2', ma2_isBull ? i_c_maBull2 : i_c_maBear2, 2)
+plot(ma3, 'MA 3', ma3_isBull ? i_c_maBull3 : i_c_maBear3, 2)
+plot(ma4, 'MA 4', ma4_isBull ? i_c_maBull4 : i_c_maBear4, 2)
+plot(ma5, 'MA 5', ma5_isBull ? i_c_maBull5 : i_c_maBear5, 2)
+plot(ma6, 'MA 6', ma6_isBull ? i_c_maBull6 : i_c_maBear6, 2)
+plot(ma7, 'MA 7', ma7_isBull ? i_c_maBull7 : i_c_maBear7, 2)
+
+// --- Non-Repainting Buy Signal Logic ---
+// Checks if EMAs 5, 6, and 7 WERE ALL GREEN on the PREVIOUS closed candle [1]
+bool emas567_green_prev = ma5_isBull[1] and ma6_isBull[1] and ma7_isBull[1]
+
+// Triggers ONLY on the first candle when the condition becomes true (crosses into condition)
+bool buySignal = emas567_green_prev and not (ma5_isBull[2] and ma6_isBull[2] and ma7_isBull[2])
+
+// Plot small green triangle below the current candle bar
+plotshape(buySignal, title="Buy Signal", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)

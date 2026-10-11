@@ -1,0 +1,19 @@
+{
+  "alerts": [
+    {
+      "id": "01a528c205ca",
+      "name": "XRPUSDT Crossing up 1.4004",
+      "clause": "[close] crossed above 1.4004",
+      "interval": "15m",
+      "limit": 400,
+      "universe": 120,
+      "venue": null,
+      "enabled": true,
+      "created": 1791594633.0262172,
+      "last_run": 1791739795.387545,
+      "last_count": 0,
+      "notify_browser": true,
+      "notify_telegram": true
+    }
+  ]
+}

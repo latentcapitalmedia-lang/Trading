@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+/* The charting library paints from requestAnimationFrame, and browsers never
+   fire rAF while the document is hidden. A chart opened in a background tab is
+   fine — it paints the moment it is shown — but headless capture never gets
+   that moment, so the canvas stays blank. Append ?raf=1 to the URL to paint
+   from a timer instead. Nothing sets it in normal use. */
+if (/(?:[?&])raf=1(?:&|$)/.test(location.search)) {
+  window.requestAnimationFrame = function (cb) { return setTimeout(function () { cb(Date.now()); }, 16); };
+  window.cancelAnimationFrame = function (id) { clearTimeout(id); };
+}
+</script>
+<title>chartink·crypto — crypto screener</title>
+<meta name="description" content="Chartink-style technical screener for cryptocurrency markets, powered by live Binance data.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M7 22l5-7 4 4 4-8 5 6' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/chartview.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="#/screener">
+    <span class="mark">C</span>
+    chartink<span class="sub">·crypto</span>
+  </a>
+  <nav class="nav" id="nav">
+    <a href="#/screener" data-route="screener">Screener</a>
+    <a href="#/scans" data-route="scans">Scans</a>
+    <a href="#/chart" data-route="chart">Charts</a>
+    <a href="#/tradingview" data-route="tradingview">TradingView</a>
+    <a href="#/watchlist" data-route="watchlist">Watchlist</a>
+    <a href="#/alerts" data-route="alerts">Alerts</a>
+    <a href="#/api" data-route="api">API</a>
+  </nav>
+  <span class="spacer"></span>
+  <span class="pill live">Spot · Binance · Bybit · KuCoin · Bitget · OKX</span>
+  <span class="meta" id="topMeta">loading…</span>
+</header>
+
+<main class="view" id="view"></main>
+
+<div id="toasts"></div>
+<div id="modal-root"></div>
+
+<script src="/static/vendor/lightweight-charts.standalone.production.js"></script>
+<script src="/static/pine.js"></script>
+<script src="/static/tvicons.js"></script>
+<script src="/static/chartview.js"></script>
+<script src="/static/chart.js"></script>
+<script src="/static/app.js"></script>
+<script src="/static/pages.js"></script>
+</body>
+</html>

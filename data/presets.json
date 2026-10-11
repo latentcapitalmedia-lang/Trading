@@ -1,0 +1,151 @@
+{
+  "presets": [
+    {
+      "id": "golden-cross",
+      "name": "Golden cross: SMA20 crossed above SMA50",
+      "cat": "Trend",
+      "clause": "[sma(20)] crossed above [sma(50)]",
+      "desc": "Short-term average just overtook the longer-term one - classic trend-change signal."
+    },
+    {
+      "id": "death-cross",
+      "name": "Death cross: SMA20 crossed below SMA50",
+      "cat": "Trend",
+      "clause": "[sma(20)] crossed below [sma(50)]",
+      "desc": "Momentum turning bearish on the daily chart."
+    },
+    {
+      "id": "uptrend-momentum",
+      "name": "Uptrend with momentum (price > SMA50, RSI > 60)",
+      "cat": "Trend",
+      "clause": "[price_vs_sma(50)] > 0 and [rsi(14)] > 60",
+      "desc": "Coins holding above their 50-day trend while momentum stays strong."
+    },
+    {
+      "id": "rsi-oversold",
+      "name": "RSI oversold (RSI14 < 30)",
+      "cat": "Momentum",
+      "clause": "[rsi(14)] < 30",
+      "desc": "Short-term selling may be overdone."
+    },
+    {
+      "id": "rsi-overbought",
+      "name": "RSI overbought (RSI14 > 70)",
+      "cat": "Momentum",
+      "clause": "[rsi(14)] > 70",
+      "desc": "Runaway momentum - watch for exhaustion."
+    },
+    {
+      "id": "macd-cross",
+      "name": "MACD bullish crossover today",
+      "cat": "Momentum",
+      "clause": "[macd_line(12,26,9)] crossed above [macd_signal(12,26,9)]",
+      "desc": "MACD line just broke above its signal line."
+    },
+    {
+      "id": "macd-positive-trend",
+      "name": "MACD positive in an uptrend",
+      "cat": "Momentum",
+      "clause": "[macd_histogram(12,26,9)] > 0 and [price_vs_sma(50)] > 0",
+      "desc": "Bullish momentum confirmed by price structure."
+    },
+    {
+      "id": "stoch-oversold",
+      "name": "Stochastic oversold (%K < 20)",
+      "cat": "Momentum",
+      "clause": "[stoch_k(14)] < 20",
+      "desc": "Price closing near the bottom of its recent range."
+    },
+    {
+      "id": "mfi-oversold",
+      "name": "Money flow oversold (MFI14 < 20)",
+      "cat": "Momentum",
+      "clause": "[mfi(14)] < 20",
+      "desc": "Volume-weighted oversold reading."
+    },
+    {
+      "id": "volume-surge",
+      "name": "Volume surge (3x 20-bar average)",
+      "cat": "Volume",
+      "clause": "[volume_ratio(20)] > 3",
+      "desc": "Unusual participation - often precedes a breakout."
+    },
+    {
+      "id": "breakout-52w",
+      "name": "At a 52-week high",
+      "cat": "Breakout",
+      "clause": "[close] >= [high_52w(365)]",
+      "desc": "Price printing a fresh yearly high."
+    },
+    {
+      "id": "near-52w-low",
+      "name": "Within 10% of a 52-week low",
+      "cat": "Breakout",
+      "clause": "[pct_from_low_52w(365)] < 10",
+      "desc": "Deep in the range - potential mean-reversion candidate."
+    },
+    {
+      "id": "range-breakout",
+      "name": "20-bar breakout",
+      "cat": "Breakout",
+      "clause": "[close] > [high_n(20)]",
+      "desc": "Close above the prior 20-bar high."
+    },
+    {
+      "id": "supertrend-bull",
+      "name": "Supertrend bullish with ADX > 25",
+      "cat": "Trend",
+      "clause": "[supertrend_dir(10,3)] > 0 and [adx(14)] > 25",
+      "desc": "Confirmed uptrend with a strong trend-strength reading."
+    },
+    {
+      "id": "strong-trend",
+      "name": "Strong trend (ADX > 30)",
+      "cat": "Trend",
+      "clause": "[adx(14)] > 30",
+      "desc": "Directional move with real strength behind it."
+    },
+    {
+      "id": "bollinger-squeeze",
+      "name": "Bollinger squeeze (bandwidth < 4)",
+      "cat": "Volatility",
+      "clause": "[bollinger_bandwidth(20,2)] < 4",
+      "desc": "Volatility compressed - breakout usually follows."
+    },
+    {
+      "id": "lower-band-bounce",
+      "name": "Tagging the lower Bollinger band (%B < 5)",
+      "cat": "Volatility",
+      "clause": "[bollinger_pct_b(20,2)] < 5",
+      "desc": "Price sitting on the bottom band."
+    },
+    {
+      "id": "high-volatility",
+      "name": "High volatility (ATR > 5% of price)",
+      "cat": "Volatility",
+      "clause": "[atr_pct(14)] > 5",
+      "desc": "Wide daily ranges - room for big swings."
+    },
+    {
+      "id": "big-movers-up",
+      "name": "Top movers: up more than 5%",
+      "cat": "Momentum",
+      "clause": "[change_pct] > 5",
+      "desc": "Strong single-bar gains."
+    },
+    {
+      "id": "liquid-large-caps",
+      "name": "Liquid large caps (24h volume > $100M)",
+      "cat": "Fundamentals",
+      "clause": "[quote_volume_24h] > 100000000 and [market_cap] > 1000000000",
+      "desc": "Majors with real depth behind them."
+    },
+    {
+      "id": "reversal-candidate",
+      "name": "Reversal candidate",
+      "cat": "Momentum",
+      "clause": "[supertrend_dir(10,3)] > 0 and [macd_histogram(12,26,9)] > 0 and [rsi(14)] < 55",
+      "desc": "Trend flipped up and momentum is positive but not yet stretched."
+    }
+  ]
+}

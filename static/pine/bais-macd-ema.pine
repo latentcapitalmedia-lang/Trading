@@ -1,0 +1,409 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════
+//  MACD Backgrounds + Period Lines + EMA Backgrounds  (all in 1 indicator)
+//
+//  Options 1-3 : the chart background follows the MACD histogram colour
+//                 of a chosen timeframe:
+//                   dark green = hist > 0 & rising
+//                   fade  green = hist > 0 & falling
+//                   dark red   = hist < 0 & falling
+//                   fade  red  = hist < 0 & rising
+//                 Every colour is a full colour picker; its transparency
+//                 is set inside the picker itself.
+//  Options 4-6 : vertical line on the period's starting candle of a
+//                 chosen timeframe, anchored with xloc.bar_time, so the
+//                 line never moves when the chart timeframe changes.
+//  Option 7    : vertical line (+ triangle) on the 1st positive bar of
+//                 every MACD run of the chosen timeframe.
+//  Options 8-10: background follows the EMA cross state of a chosen
+//                 timeframe - EMA 1&2 / EMA 3&4 / EMA 5&6 - each slot
+//                 with its own lengths, timeframe, 2 colours and
+//                 optional EMA plots.
+//
+//  All 10      : "Start from 2nd candle" leaves the 1st candle untouched.
+//                   · MACD backgrounds (1-3) and EMA backgrounds (8-10):
+//                     the period shows the PREVIOUS period's state, so a
+//                     new colour only starts on the 2nd candle of the
+//                     run. Example with weeks A (red) and B (green): the
+//                     background stays red until week C starts, then
+//                     turns green; if week C closes red it stays green
+//                     until week D starts.
+//                   · Period lines (4-6): the line is placed on the 2nd
+//                     candle of the period instead of the 1st.
+//                   · Marker (7): the line is placed on the 2nd candle
+//                     of the run instead of the 1st.
+//
+//  The MACD itself and the EMAs are calculated INSIDE
+//  request.security(), so a "Weekly MACD" is the real weekly MACD (not a
+//  daily MACD sampled weekly) and a "Weekly EMA" the real weekly EMA.
+// ═══════════════════════════════════════════════════════════════════════
+indicator("Abuzar-BAIS Backgrounfof MACD & EMA", shorttitle = "BAIS+MACD+EMA", overlay = true, max_lines_count = 500, max_labels_count = 500)
+
+string GRP_BGA = "1 · MACD Background A"
+string GRP_BGB = "2 · MACD Background B"
+string GRP_BGC = "3 · MACD Background C"
+string GRP_LNA = "4 · Period Line A"
+string GRP_LNB = "5 · Period Line B"
+string GRP_LNC = "6 · Period Line C"
+string GRP_MK  = "7 · 1st Green MACD Marker"
+string GRP_EMA1 = "8 · EMA 1 & 2 Cross"
+string GRP_EMA2 = "9 · EMA 3 & 4 Cross"
+string GRP_EMA3 = "10 · EMA 5 & 6 Cross"
+
+string TIP_BG = "Background follows the MACD histogram colour of the selected timeframe:\ndark green = above 0 & rising, fade green = above 0 & falling,\ndark red = below 0 & falling, fade red = below 0 & rising."
+string TIP_TF = "Timeframe of the MACD. Yearly = 12M (type it in the box if it is not listed)."
+string TIP_SK = "Leaves the 1st candle of every period untouched.\nMACD backgrounds: a period shows the PREVIOUS period's histogram colour, so a new colour starts on the period's 2nd candle (week A red, week B green -> background stays red until week C starts, then green).\nLines: the line is placed on the 2nd candle of the period instead of the 1st."
+string TIP_LT = "Pick a timeframe HIGHER than the chart's (e.g. Weekly on a Daily chart). Yearly = 12M."
+string TIP_MK = "Moves the marker from the run's 1st candle to its 2nd candle (the 2nd chart candle of the period that turned positive)."
+string TIP_EON = "Paints the chart background with this EMA pair's cross state: colour 1 while the fast EMA is above the slow EMA, colour 2 while it is below."
+string TIP_ET  = "Timeframe the EMAs are calculated on. Yearly = 12M (type it in the box if it is not listed)."
+string TIP_ESK = "Leaves the 1st candle of every period untouched: the period shows the PREVIOUS period's cross state, so a new colour only starts on the 2nd candle of the run."
+string TIP_LEN = "Length of the EMA (1 = fastest). The two lengths of a pair can be equal or different."
+string TIP_PL  = "Draws both EMAs of this pair on the chart (not affected by 'Start from 2nd candle')."
+
+// ═══ 1 · MACD Background A ═════════════════════════════════════════════
+bool   bgAOn    = input.bool(false, "Enable", group = GRP_BGA, tooltip = TIP_BG)
+string bgATf    = input.timeframe("W", "MACD timeframe", group = GRP_BGA, tooltip = TIP_TF)
+color  bgAGrd   = input.color(color.new(#26A69A, 70), "Dark green", inline = "a1", group = GRP_BGA)
+color  bgAGrf   = input.color(color.new(#B2DFDB, 70), "Fade green", inline = "a1", group = GRP_BGA)
+color  bgARdd   = input.color(color.new(#FF5252, 70), "Dark red", inline = "a2", group = GRP_BGA)
+color  bgARdf   = input.color(color.new(#FFCDD2, 70), "Fade red", inline = "a2", group = GRP_BGA)
+bool   bgASkip  = input.bool(false, "Start from 2nd candle", group = GRP_BGA, tooltip = TIP_SK)
+
+// ═══ 2 · MACD Background B ═════════════════════════════════════════════
+bool   bgBOn    = input.bool(false, "Enable", group = GRP_BGB, tooltip = TIP_BG)
+string bgBTf    = input.timeframe("D", "MACD timeframe", group = GRP_BGB, tooltip = TIP_TF)
+color  bgBGrd   = input.color(color.new(#26A69A, 70), "Dark green", inline = "b1", group = GRP_BGB)
+color  bgBGrf   = input.color(color.new(#B2DFDB, 70), "Fade green", inline = "b1", group = GRP_BGB)
+color  bgBRdd   = input.color(color.new(#FF5252, 70), "Dark red", inline = "b2", group = GRP_BGB)
+color  bgBRdf   = input.color(color.new(#FFCDD2, 70), "Fade red", inline = "b2", group = GRP_BGB)
+bool   bgBSkip  = input.bool(false, "Start from 2nd candle", group = GRP_BGB, tooltip = TIP_SK)
+
+// ═══ 3 · MACD Background C ═════════════════════════════════════════════
+bool   bgCOn    = input.bool(false, "Enable", group = GRP_BGC, tooltip = TIP_BG)
+string bgCTf    = input.timeframe("M", "MACD timeframe", group = GRP_BGC, tooltip = TIP_TF)
+color  bgCGrd   = input.color(color.new(#26A69A, 70), "Dark green", inline = "c1", group = GRP_BGC)
+color  bgCGrf   = input.color(color.new(#B2DFDB, 70), "Fade green", inline = "c1", group = GRP_BGC)
+color  bgCRdd   = input.color(color.new(#FF5252, 70), "Dark red", inline = "c2", group = GRP_BGC)
+color  bgCRdf   = input.color(color.new(#FFCDD2, 70), "Fade red", inline = "c2", group = GRP_BGC)
+bool   bgCSkip  = input.bool(false, "Start from 2nd candle", group = GRP_BGC, tooltip = TIP_SK)
+
+// ═══ 4 · Period Line A ═════════════════════════════════════════════════
+bool   lnAOn    = input.bool(false, "Enable", group = GRP_LNA)
+string lnATf    = input.timeframe("M", "Timeframe", inline = "la", group = GRP_LNA, tooltip = TIP_LT)
+color  lnACol   = input.color(#FF9800, "Colour", inline = "la", group = GRP_LNA)
+int    lnAW     = input.int(2, "Width", minval = 1, maxval = 5, inline = "lb", group = GRP_LNA)
+string lnAStyle = input.string("Solid", "Style", options = ["Solid", "Dashed", "Dotted"], inline = "lb", group = GRP_LNA)
+bool   lnASkip  = input.bool(false, "Start from 2nd candle", group = GRP_LNA, tooltip = TIP_SK)
+
+// ═══ 5 · Period Line B ═════════════════════════════════════════════════
+bool   lnBOn    = input.bool(false, "Enable", group = GRP_LNB)
+string lnBTf    = input.timeframe("W", "Timeframe", inline = "lc", group = GRP_LNB, tooltip = TIP_LT)
+color  lnBCol   = input.color(#26C6DA, "Colour", inline = "lc", group = GRP_LNB)
+int    lnBW     = input.int(2, "Width", minval = 1, maxval = 5, inline = "ld", group = GRP_LNB)
+string lnBStyle = input.string("Solid", "Style", options = ["Solid", "Dashed", "Dotted"], inline = "ld", group = GRP_LNB)
+bool   lnBSkip  = input.bool(false, "Start from 2nd candle", group = GRP_LNB, tooltip = TIP_SK)
+
+// ═══ 6 · Period Line C ═════════════════════════════════════════════════
+bool   lnCOn    = input.bool(false, "Enable", group = GRP_LNC)
+string lnCTf    = input.timeframe("D", "Timeframe", inline = "le", group = GRP_LNC, tooltip = TIP_LT)
+color  lnCCol   = input.color(#AB47BC, "Colour", inline = "le", group = GRP_LNC)
+int    lnCW     = input.int(2, "Width", minval = 1, maxval = 5, inline = "lf", group = GRP_LNC)
+string lnCStyle = input.string("Solid", "Style", options = ["Solid", "Dashed", "Dotted"], inline = "lf", group = GRP_LNC)
+bool   lnCSkip  = input.bool(false, "Start from 2nd candle", group = GRP_LNC, tooltip = TIP_SK)
+
+// ═══ 7 · 1st green MACD marker (original feature) ══════════════════════
+bool   sigOn    = input.bool(true, "Enable", group = GRP_MK)
+string sigTf    = input.timeframe("W", "MACD timeframe", group = GRP_MK, tooltip = "Timeframe of the MACD whose histogram is tested (W = weekly).")
+color  sigCol   = input.color(#00E676, "Colour", inline = "s1", group = GRP_MK)
+int    sigW     = input.int(2, "Width", minval = 1, maxval = 5, inline = "s1", group = GRP_MK)
+string sigStyle = input.string("Solid", "Style", options = ["Solid", "Dashed", "Dotted"], inline = "s2", group = GRP_MK)
+bool   sigMark  = input.bool(true, "Show triangle marker", inline = "s2", group = GRP_MK)
+bool   sigSkip  = input.bool(false, "Start from 2nd candle", group = GRP_MK, tooltip = TIP_MK)
+
+// ═══ 8 · EMA 1 & 2 cross ═══════════════════════════════════════════════
+bool   e1On    = input.bool(false, "Enable background", group = GRP_EMA1, tooltip = TIP_EON)
+string e1Tf    = input.timeframe("D", "EMA timeframe", group = GRP_EMA1, tooltip = TIP_ET)
+int    e1LenA  = input.int(1, "EMA 1 Length", minval = 1, inline = "eL1", group = GRP_EMA1, tooltip = TIP_LEN)
+int    e1LenB  = input.int(2, "EMA 2 Length", minval = 1, inline = "eL1", group = GRP_EMA1, tooltip = TIP_LEN)
+color  e1Up    = input.color(color.new(color.green, 88), "Colour: 1 > 2", inline = "eC1", group = GRP_EMA1)
+color  e1Dn    = input.color(color.new(color.red, 88), "1 < 2", inline = "eC1", group = GRP_EMA1)
+bool   e1Skip  = input.bool(false, "Start from 2nd candle", group = GRP_EMA1, tooltip = TIP_ESK)
+bool   e1Plot  = input.bool(true, "Plot EMAs", inline = "eP1", group = GRP_EMA1, tooltip = TIP_PL)
+color  e1PA    = input.color(color.green, "Fast", inline = "eP1", group = GRP_EMA1)
+color  e1PB    = input.color(color.red, "Slow", inline = "eP1", group = GRP_EMA1)
+
+// ═══ 9 · EMA 3 & 4 cross ═══════════════════════════════════════════════
+bool   e2On    = input.bool(false, "Enable background", group = GRP_EMA2, tooltip = TIP_EON)
+string e2Tf    = input.timeframe("D", "EMA timeframe", group = GRP_EMA2, tooltip = TIP_ET)
+int    e2LenA  = input.int(3, "EMA 3 Length", minval = 1, inline = "eL2", group = GRP_EMA2, tooltip = TIP_LEN)
+int    e2LenB  = input.int(4, "EMA 4 Length", minval = 1, inline = "eL2", group = GRP_EMA2, tooltip = TIP_LEN)
+color  e2Up    = input.color(color.new(color.green, 88), "Colour: 3 > 4", inline = "eC2", group = GRP_EMA2)
+color  e2Dn    = input.color(color.new(color.red, 88), "3 < 4", inline = "eC2", group = GRP_EMA2)
+bool   e2Skip  = input.bool(false, "Start from 2nd candle", group = GRP_EMA2, tooltip = TIP_ESK)
+bool   e2Plot  = input.bool(true, "Plot EMAs", inline = "eP2", group = GRP_EMA2, tooltip = TIP_PL)
+color  e2PA    = input.color(color.green, "Fast", inline = "eP2", group = GRP_EMA2)
+color  e2PB    = input.color(color.red, "Slow", inline = "eP2", group = GRP_EMA2)
+
+// ═══ 10 · EMA 5 & 6 cross ══════════════════════════════════════════════
+bool   e3On    = input.bool(false, "Enable background", group = GRP_EMA3, tooltip = TIP_EON)
+string e3Tf    = input.timeframe("D", "EMA timeframe", group = GRP_EMA3, tooltip = TIP_ET)
+int    e3LenA  = input.int(5, "EMA 5 Length", minval = 1, inline = "eL3", group = GRP_EMA3, tooltip = TIP_LEN)
+int    e3LenB  = input.int(6, "EMA 6 Length", minval = 1, inline = "eL3", group = GRP_EMA3, tooltip = TIP_LEN)
+color  e3Up    = input.color(color.new(color.green, 88), "Colour: 5 > 6", inline = "eC3", group = GRP_EMA3)
+color  e3Dn    = input.color(color.new(color.red, 88), "5 < 6", inline = "eC3", group = GRP_EMA3)
+bool   e3Skip  = input.bool(false, "Start from 2nd candle", group = GRP_EMA3, tooltip = TIP_ESK)
+bool   e3Plot  = input.bool(true, "Plot EMAs", inline = "eP3", group = GRP_EMA3, tooltip = TIP_PL)
+color  e3PA    = input.color(color.green, "Fast", inline = "eP3", group = GRP_EMA3)
+color  e3PB    = input.color(color.red, "Slow", inline = "eP3", group = GRP_EMA3)
+
+// ═══ helpers ═══════════════════════════════════════════════════════════
+
+// Source-over blend of two translucent colours (`under` is painted first).
+fBlend(color under, color over) =>
+    float aU = (100.0 - color.t(under)) / 100.0
+    float aO = (100.0 - color.t(over)) / 100.0
+    float wU = aU * (1.0 - aO)
+    float aR = wU + aO
+    float r  = aR <= 0.0 ? 0.0 : (color.r(under) * wU + color.r(over) * aO) / aR
+    float g  = aR <= 0.0 ? 0.0 : (color.g(under) * wU + color.g(over) * aO) / aR
+    float b  = aR <= 0.0 ? 0.0 : (color.b(under) * wU + color.b(over) * aO) / aR
+    color.rgb(r, g, b, 100.0 - aR * 100.0)
+
+// Style name -> line style constant.
+fStyle(string s) =>
+    s == "Dashed" ? line.style_dashed : s == "Dotted" ? line.style_dotted : line.style_solid
+
+// Opening time of the selected timeframe's period that contains this bar.
+fPeriod(string tf) =>
+    int t = time(tf)
+    na(t) ? time : t
+
+// True on the first chart bar of a new period (also true on the very first bar).
+// Never returns `na`, so it is always safe to use in a condition.
+fNew(int t, int tPrev) =>
+    bar_index == 0 or (not na(t) and not na(tPrev) and t != tPrev)
+
+// Full-height vertical line anchored to an absolute time.
+fVLine(int x, color col, string stl, int w) =>
+    float y1 = low
+    float y2 = high == low ? high + syminfo.mintick : high
+    line.new(x, y1, x, y2, xloc = xloc.bar_time, extend = extend.both, color = col, style = stl, width = w)
+
+// MACD histogram state of the timeframe this is requested for.
+// 0 = no data yet, 1 = dark green, 2 = fade green, 3 = dark red, 4 = fade red.
+// Calculated inside request.security(), so it is the real MACD of that timeframe.
+fMacdState() =>
+    [macdLine, signalLine, h] = ta.macd(close, 12, 26, 9)
+    float st = 0.0
+    if not na(h)
+        float hp = nz(h[1])
+        st := h > 0.0 ? (h > hp ? 1.0 : 2.0) : (h > hp ? 4.0 : 3.0)
+    st
+
+// State -> colour of the matching slot (fully transparent when unknown).
+fPick(float st, color c1, color c2, color c3, color c4) =>
+    float s = nz(st, 0.0)
+    s == 1.0 ? c1 : s == 2.0 ? c2 : s == 3.0 ? c3 : s == 4.0 ? c4 : color.new(color.white, 100)
+
+// Fully transparent colour (slot off / state unknown).
+color invisible = color.new(color.white, 100)
+
+// ═══ 1/2/3 · MACD backgrounds ══════════════════════════════════════════
+// lookahead_on = the colour of a period is shown from that period's 1st
+// candle, exactly like the MACD pane shows it for historical bars.
+stA = request.security(syminfo.tickerid, bgATf, fMacdState(), lookahead = barmerge.lookahead_on)
+stB = request.security(syminfo.tickerid, bgBTf, fMacdState(), lookahead = barmerge.lookahead_on)
+stC = request.security(syminfo.tickerid, bgCTf, fMacdState(), lookahead = barmerge.lookahead_on)
+
+// "Start from 2nd candle": latch the previous period's state on the 1st
+// candle of each period, so the colour shown during week N is week N-1's
+// histogram colour. A new colour therefore only starts on the 2nd candle
+// of the run: A red, B green -> red until C starts, then green; if C
+// closes red it stays green until D starts.
+paBg  = fPeriod(bgATf)
+paNew = fNew(paBg, paBg[1])
+var float stAd = 0.0
+if paNew and bar_index > 0
+    stAd := stA[1]
+
+pbBg  = fPeriod(bgBTf)
+pbNew = fNew(pbBg, pbBg[1])
+var float stBd = 0.0
+if pbNew and bar_index > 0
+    stBd := stB[1]
+
+pcBg  = fPeriod(bgCTf)
+pcNew = fNew(pcBg, pcBg[1])
+var float stCd = 0.0
+if pcNew and bar_index > 0
+    stCd := stC[1]
+
+color slotA = bgAOn ? fPick(bgASkip ? stAd : stA, bgAGrd, bgAGrf, bgARdd, bgARdf) : invisible
+color slotB = bgBOn ? fPick(bgBSkip ? stBd : stB, bgBGrd, bgBGrf, bgBRdd, bgBRdf) : invisible
+color slotC = bgCOn ? fPick(bgCSkip ? stCd : stC, bgCGrd, bgCGrf, bgCRdd, bgCRdf) : invisible
+
+// ═══ 7 · 1st positive bar of every MACD run ════════════════════════════
+// State and period open time come from the SAME snapshot, so the line always
+// lands on the first candle of the period that turned positive.
+// lookahead_off = only completed periods are used, so the marker never repaints.
+[stMk, tMk] = request.security(syminfo.tickerid, sigTf, [fMacdState(), time], lookahead = barmerge.lookahead_off)
+
+// "Start from 2nd candle": keep the open time and the 2nd-chart-candle time
+// of the current period AND of the one before it. Depending on when the
+// requested value becomes visible (on the period's end candle, on the next
+// period's 1st candle, or already on the period's own 1st candle) the period
+// that turned positive is either the current one or the previous one, so
+// both are remembered instead of relying on a single guess.
+mkPer  = fPeriod(sigTf)
+mkNew  = fNew(mkPer, mkPer[1])
+var int  mkOpenCur  = 0
+var int  mkOpenPrev = 0
+var int  mkT2Cur    = 0
+var int  mkT2Prev   = 0
+var bool mkWasNew   = false
+if mkNew
+    mkOpenPrev := mkOpenCur
+    mkOpenCur  := mkPer
+    mkT2Prev   := mkT2Cur
+    mkT2Cur    := 0
+else if mkWasNew
+    mkT2Cur := time
+mkWasNew := mkNew
+
+float sm  = nz(stMk, -1.0)
+float sm1 = nz(stMk[1], 4.0)
+sigHit = sigOn and barstate.isconfirmed and sm >= 1.0 and sm <= 2.0 and sm1 >= 3.0
+
+// Where the marker goes with "Start from 2nd candle" switched on.
+int  mkWant  = tMk
+bool mkLater = false
+if sigSkip and not na(tMk)
+    if tMk == mkOpenCur and mkT2Cur != 0
+        mkWant := mkT2Cur
+    else if tMk == mkOpenPrev and mkT2Prev != 0
+        mkWant := mkT2Prev
+    else if tMk == mkOpenCur
+        mkLater := true
+
+var bool mkPend  = false
+var int  mkPendX = 0
+
+// The run is still going -> the next bar IS the run's 2nd candle. A run of
+// a single candle has no 2nd one, so it falls back to the run's 1st candle.
+int mkDrawX = sigOn and sm >= 1.0 and sm <= 2.0 ? time : mkPendX
+
+// Drawing postponed by one bar (the 2nd candle did not exist yet above).
+if mkPend
+    mkPend := false
+    fVLine(mkDrawX, sigCol, fStyle(sigStyle), sigW)
+    if sigMark
+        label.new(mkDrawX, na, "", xloc = xloc.bar_time, yloc = yloc.abovebar, style = label.style_triangleup, color = sigCol, size = size.small)
+
+var int sigLastBar = -1
+if sigHit and bar_index != sigLastBar
+    sigLastBar := bar_index
+    if mkLater
+        mkPend  := true
+        mkPendX := tMk
+    else
+        fVLine(mkWant, sigCol, fStyle(sigStyle), sigW)
+        if sigMark
+            label.new(mkWant, na, "", xloc = xloc.bar_time, yloc = yloc.abovebar, style = label.style_triangleup, color = sigCol, size = size.small)
+
+alertcondition(sigHit, title = "1st green MACD bar", message = "MACD histogram turned positive on {{ticker}}, {{interval}}")
+
+// ═══ 4/5/6 · Period start lines ════════════════════════════════════════
+la    = fPeriod(lnATf)
+laNew = fNew(la, la[1])
+var int laStart = -1
+if laNew
+    laStart := bar_index
+laHit = lnASkip ? bar_index == laStart + 1 : laNew
+var int laLast = -1
+if lnAOn and laHit and bar_index != laLast
+    fVLine(time, lnACol, fStyle(lnAStyle), lnAW)
+    laLast := bar_index
+
+lb    = fPeriod(lnBTf)
+lbNew = fNew(lb, lb[1])
+var int lbStart = -1
+if lbNew
+    lbStart := bar_index
+lbHit = lnBSkip ? bar_index == lbStart + 1 : lbNew
+var int lbLast = -1
+if lnBOn and lbHit and bar_index != lbLast
+    fVLine(time, lnBCol, fStyle(lnBStyle), lnBW)
+    lbLast := bar_index
+
+lc    = fPeriod(lnCTf)
+lcNew = fNew(lc, lc[1])
+var int lcStart = -1
+if lcNew
+    lcStart := bar_index
+lcHit = lnCSkip ? bar_index == lcStart + 1 : lcNew
+var int lcLast = -1
+if lnCOn and lcHit and bar_index != lcLast
+    fVLine(time, lnCCol, fStyle(lnCStyle), lnCW)
+    lcLast := bar_index
+
+// ═══ 8/9/10 · EMA cross backgrounds ════════════════════════════════════
+// The EMAs are calculated INSIDE request.security() (the real EMA of that
+// timeframe). lookahead_on = a period's value is visible from that
+// period's 1st candle, so the switch lands exactly on the boundary.
+ema1 = request.security(syminfo.tickerid, e1Tf, ta.ema(close, e1LenA), lookahead = barmerge.lookahead_on)
+ema2 = request.security(syminfo.tickerid, e1Tf, ta.ema(close, e1LenB), lookahead = barmerge.lookahead_on)
+
+st1 = (not na(ema1) and not na(ema2)) ? (ema1 > ema2 ? 1.0 : (ema1 < ema2 ? -1.0 : 0.0)) : 0.0
+
+per1 = fPeriod(e1Tf)
+new1 = fNew(per1, per1[1])
+var float st1L = 0.0
+if new1 and bar_index > 0
+    st1L := st1[1]
+
+float use1 = e1Skip ? st1L : st1
+color  bg1  = e1On ? (use1 == 1.0 ? e1Up : use1 == -1.0 ? e1Dn : invisible) : invisible
+
+ema3 = request.security(syminfo.tickerid, e2Tf, ta.ema(close, e2LenA), lookahead = barmerge.lookahead_on)
+ema4 = request.security(syminfo.tickerid, e2Tf, ta.ema(close, e2LenB), lookahead = barmerge.lookahead_on)
+
+st2 = (not na(ema3) and not na(ema4)) ? (ema3 > ema4 ? 1.0 : (ema3 < ema4 ? -1.0 : 0.0)) : 0.0
+
+per2 = fPeriod(e2Tf)
+new2 = fNew(per2, per2[1])
+var float st2L = 0.0
+if new2 and bar_index > 0
+    st2L := st2[1]
+
+float use2 = e2Skip ? st2L : st2
+color  bg2  = e2On ? (use2 == 1.0 ? e2Up : use2 == -1.0 ? e2Dn : invisible) : invisible
+
+ema5 = request.security(syminfo.tickerid, e3Tf, ta.ema(close, e3LenA), lookahead = barmerge.lookahead_on)
+ema6 = request.security(syminfo.tickerid, e3Tf, ta.ema(close, e3LenB), lookahead = barmerge.lookahead_on)
+
+st3 = (not na(ema5) and not na(ema6)) ? (ema5 > ema6 ? 1.0 : (ema5 < ema6 ? -1.0 : 0.0)) : 0.0
+
+per3 = fPeriod(e3Tf)
+new3 = fNew(per3, per3[1])
+var float st3L = 0.0
+if new3 and bar_index > 0
+    st3L := st3[1]
+
+float use3 = e3Skip ? st3L : st3
+color  bg3  = e3On ? (use3 == 1.0 ? e3Up : use3 == -1.0 ? e3Dn : invisible) : invisible
+
+// ═══ background · MACD slots (1-3) + EMA slots (8-10), one call ════════
+// The two groups are alpha-blended together, so a slot only shows through
+// the ones painted above it and nothing hides the others completely.
+color bgEma  = fBlend(fBlend(bg1, bg2), bg3)
+color bgMacd = fBlend(fBlend(slotA, slotB), slotC)
+bgcolor(fBlend(bgEma, bgMacd), title = "Background")
+
+// ═══ EMA plots (8/9/10) ════════════════════════════════════════════════
+plot(e1Plot ? ema1 : na, title = "EMA 1", color = e1PA, linewidth = 2)
+plot(e1Plot ? ema2 : na, title = "EMA 2", color = e1PB, linewidth = 2)
+plot(e2Plot ? ema3 : na, title = "EMA 3", color = e2PA, linewidth = 2)
+plot(e2Plot ? ema4 : na, title = "EMA 4", color = e2PB, linewidth = 2)
+plot(e3Plot ? ema5 : na, title = "EMA 5", color = e3PA, linewidth = 2)
+plot(e3Plot ? ema6 : na, title = "EMA 6", color = e3PB, linewidth = 2)
