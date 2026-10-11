@@ -27,6 +27,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 PORT = int(os.environ.get("PORT", "5000"))
+# Render (and every other PaaS) routes to 0.0.0.0 inside its container; a
+# localhost bind is unreachable from its router and the service never goes
+# healthy. Locally we keep 127.0.0.1 so the dev server is not exposed to the
+# LAN — set HOST=0.0.0.0 in the platform's environment instead of editing this.
+HOST = os.environ.get("HOST", "127.0.0.1")
 
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="/static")
 app.json.sort_keys = False
@@ -637,8 +642,8 @@ def settings_test():
 def main():
     os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
     alerts.start()
-    print(f"chartink-crypto running on http://127.0.0.1:{PORT}")
-    app.run(host="127.0.0.1", port=PORT, debug=False, threaded=True, use_reloader=False)
+    print(f"chartink-crypto running on http://{HOST}:{PORT}")
+    app.run(host=HOST, port=PORT, debug=False, threaded=True, use_reloader=False)
 
 
 if __name__ == "__main__":
